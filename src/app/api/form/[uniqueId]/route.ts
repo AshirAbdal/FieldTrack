@@ -5,7 +5,9 @@ import { connectDB } from "@/lib/mongodb";
 import { Form } from "@/models/Form";
 import { Message } from "@/models/Message";
 
+import { Resend } from "resend";
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 export async function GET(
@@ -13,6 +15,9 @@ export async function GET(
   { params }: { params: { uniqueId: string } }
 ) {
   try {
+    // Await params
+    const { uniqueId } = await params;
+
     await connectDB();
 
     // Validate session
@@ -23,7 +28,7 @@ export async function GET(
 
     // Ensure findOne() is properly awaited
     const form = await Form.findOne({ 
-      uniqueId: params.uniqueId, 
+      uniqueId, 
       userId: session.user.id 
     }).exec(); // Add .exec() for better async handling
 
@@ -63,12 +68,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { uniqueId: string } }
 ) {
-  console.log("Form page POST received:", params.uniqueId);
-
   try {
+    // Await params to get the uniqueId value properly
+    const { uniqueId } = await params;
+
     await connectDB();
 
-    const form = await Form.findOne({ uniqueId: params.uniqueId });
+    // Find the form by uniqueId
+    const form = await Form.findOne({ uniqueId });
     if (!form) {
       return NextResponse.json(
         { success: false, message: "Form not found" },
@@ -76,63 +83,71 @@ export async function POST(
       );
     }
 
+    // Parse form data
     const formData = await request.formData();
     const name = formData.get("name")?.toString().trim();
     const email = formData.get("email")?.toString().trim();
     const message = formData.get("message")?.toString().trim();
 
-    const data = { name, email, message };
-
-    console.log("Form data received:", data);
-
     if (!name || !email || !message) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Name, email, and message are required",
-          receivedData: data,
-        },
+        { success: false, message: "All fields are required" },
         { status: 400 }
       );
     }
 
-    const newMessage = await Message.create({
-      userId: form.userId,
-      formId: form._id,
-      name,
-      email,
-      message,
-      requestUrl: request.url,
-    });
-
-    console.log("Message created:", newMessage);
+    // Save the message to the database and send email in parallel
+    await Promise.all([
+      // Save message to database
+      Message.create({
+        userId: form.userId,
+        formId: form._id,
+        name,
+        email,
+        message,
+      }),
+      // Send email to form email
+      resend.emails.send({
+        from: "noreply@fieldtrack.ravee.xyz",
+        to: form.email, // Using the email from the Form collection
+        subject: `New Message from ${name}`,
+        html: `
+          <h1>New Form Submission</h1>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong></p>
+          <p>${message}</p>
+        `,
+      })
+    ]);
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Message submitted successfully",
-        redirectUrl: `/src/app/thank-youy`,
-      },
+      { success: true, message: "Message submitted and forwarded successfully" },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error processing form submission:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Internal server error",
-        errorDetails: error instanceof Error ? error.message : "Unknown error",
-      },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
 }
+
+
+
+
+
+
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { uniqueId: string } }
 ) {
   try {
+    // Await params
+    const { uniqueId } = await params;
+
     await connectDB();
 
     // Validate session
@@ -143,7 +158,7 @@ export async function DELETE(
 
     // Find the form and ensure it belongs to the current user
     const form = await Form.findOne({ 
-      uniqueId: params.uniqueId, 
+      uniqueId, 
       userId: session.user.id 
     });
 
@@ -173,6 +188,7 @@ export async function DELETE(
     );
   }
 }
+
 
 export async function OPTIONS() {
   return NextResponse.json(

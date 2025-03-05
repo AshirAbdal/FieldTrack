@@ -6,7 +6,6 @@ import { ClipboardIcon, CheckIcon } from "@heroicons/react/24/outline";
 import Header from "@/src/app/components/Header";
 import CreateButton from "@/src/app/components/CreateForm";
 
-// Define a proper type for the form
 interface Form {
   _id: string;
   name: string;
