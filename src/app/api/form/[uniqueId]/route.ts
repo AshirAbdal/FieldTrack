@@ -10,56 +10,6 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 
-// export async function GET(
-//   _request: NextRequest,
-//   { params }: { params: { uniqueId: string } }
-// ) {
-//   try {
-//     // Await params
-//     const { uniqueId } = params;
-
-//     await connectDB();
-
-//     // Validate session
-//     const session = await getServerSession(authOptions);
-//     if (!session || !session.user) {
-//       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const form = await Form.findOne({ 
-//       uniqueId, 
-//       userId: session.user.id 
-//     }).exec(); 
-
-//     if (!form) {
-//       return NextResponse.json({ message: "Form not found" }, { status: 404 });
-//     }
-//     const messages = await Message.find({ 
-//       formId: form._id,
-//       userId: session.user.id 
-//     })
-//     .sort({ createdAt: -1 })
-//     .exec(); 
-
-//     return NextResponse.json({
-//       requestUrl: form.requestUrl,
-//       messages: messages.map(msg => ({
-//         name: msg.name,
-//         email: msg.email,
-//         message: msg.message,
-//         createdAt: msg.createdAt
-//       })),
-//     });
-//   } catch (error) {
-//     console.error("Error fetching form details:", error);
-//     return NextResponse.json(
-//       { message: "Error fetching form details" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ uniqueId: string }> }) {
   try {
     const { uniqueId } = await params;
@@ -91,6 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({
       requestUrl: form.requestUrl,
       messages: messages.map(msg => ({
+        _id: msg._id.toString(),
         name: msg.name,
         email: msg.email,
         message: msg.message,
@@ -107,6 +58,76 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 
+
+// export async function POST(
+//   request: NextRequest,
+//   { params }: { params: Promise<{ uniqueId: string }> }
+// ) {
+//   try {
+//     // Await params to get the uniqueId value properly
+//     const { uniqueId } = await params;
+
+//     await connectDB();
+
+//     // Find the form by uniqueId
+//     const form = await Form.findOne({ uniqueId });
+//     if (!form) {
+//       return NextResponse.json(
+//         { success: false, message: "Form not found" },
+//         { status: 404 }
+//       );
+//     }
+
+//     // Parse form data
+//     const formData = await request.formData();
+//     const name = formData.get("name")?.toString().trim();
+//     const email = formData.get("email")?.toString().trim();
+//     const message = formData.get("message")?.toString().trim();
+
+//     if (!name || !email || !message) {
+//       return NextResponse.json(
+//         { success: false, message: "All fields are required" },
+//         { status: 400 }
+//       );
+//     }
+
+//     // Save the message to the database and send email in parallel
+//     await Promise.all([
+//       // Save message to database
+//       Message.create({
+//         userId: form.userId,
+//         formId: form._id,
+//         name,
+//         email,
+//         message,
+//       }),
+//       // Send email to form email
+//       resend.emails.send({
+//         from: "noreply@fieldtrack.ravee.xyz",
+//         to: form.email, // Using the email from the Form collection
+//         subject: `New Message from ${name}`,
+//         html: `
+//           <h1>New Form Submission</h1>
+//           <p><strong>Name:</strong> ${name}</p>
+//           <p><strong>Email:</strong> ${email}</p>
+//           <p><strong>Message:</strong></p>
+//           <p>${message}</p>
+//         `,
+//       })
+//     ]);
+
+//     return NextResponse.json(
+//       { success: true, message: "Message submitted and forwarded successfully" },
+//       { status: 201 }
+//     );
+//   } catch (error) {
+//     console.error("Error processing form submission:", error);
+//     return NextResponse.json(
+//       { success: false, message: "Internal server error" },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 export async function POST(
   request: NextRequest,
@@ -165,10 +186,10 @@ export async function POST(
       })
     ]);
 
-    return NextResponse.json(
-      { success: true, message: "Message submitted and forwarded successfully" },
-      { status: 201 }
-    );
+    // Redirect to thank-you page after successful submission.
+    // The redirect URL is built relative to the current request URL.
+    const redirectUrl = new URL("/thank-you", request.url);
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error("Error processing form submission:", error);
     return NextResponse.json(
@@ -177,8 +198,6 @@ export async function POST(
     );
   }
 }
-
-
 
 
 export async function DELETE(

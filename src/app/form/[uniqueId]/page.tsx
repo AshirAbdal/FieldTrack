@@ -11,7 +11,9 @@ import Header from "../../components/Header";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 
-interface Message {
+// Update the interface so _id is required
+interface MessageData {
+  _id: string;
   name: string;
   email: string;
   message: string;
@@ -25,11 +27,16 @@ export default function FormDetailsPage() {
   const uniqueId = routerParams.uniqueId as string;
 
   const [requestUrl, setRequestUrl] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Track which message's reply form is open
+  const [replyOpen, setReplyOpen] = useState<string | null>(null);
+  // Store reply text per message ID
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -55,6 +62,7 @@ export default function FormDetailsPage() {
     }
   }, [uniqueId, status, router]);
 
+  // Copy the API endpoint URL
   const handleCopyUrl = () => {
     navigator.clipboard
       .writeText(requestUrl)
@@ -65,6 +73,7 @@ export default function FormDetailsPage() {
       .catch((err) => console.error("Failed to copy URL", err));
   };
 
+  // Delete the entire form
   const handleDeleteForm = async () => {
     if (
       !window.confirm(
@@ -85,14 +94,35 @@ export default function FormDetailsPage() {
     }
   };
 
+
+  const handleToggleReply = (messageId: string) => {
+    setReplyOpen((prev) => (prev === messageId ? null : messageId));
+  };
+
+
+  const handleSendReply = async (e: React.FormEvent, messageId: string) => {
+    e.preventDefault();
+
+    try {
+      await axios.post(`/api/messages/${messageId}/reply`, {
+        replyText: replyText[messageId],
+      });
+      alert("Reply sent successfully!");
+  
+      setReplyOpen(null);
+      setReplyText((prev) => ({ ...prev, [messageId]: "" }));
+    } catch (err) {
+      console.error("Error sending reply:", err);
+      alert("Failed to send reply.");
+    }
+  };
+
   if (status === "loading" || loading) {
     return <div className="text-center p-4">Loading...</div>;
   }
 
   if (status === "unauthenticated") {
-    return (
-      <div className="text-center p-4">Please log in to view this page</div>
-    );
+    return <div className="text-center p-4">Please log in to view this page</div>;
   }
 
   if (error) {
@@ -116,6 +146,8 @@ export default function FormDetailsPage() {
             {isDeleting ? "Deleting..." : "Delete Form"}
           </button>
         </div>
+
+        {/* API Endpoint Section */}
         <div className="bg-gray-100 rounded-lg p-4 mb-6 flex items-center justify-between">
           <div>
             <p className="text-gray-700 font-medium mb-2">API Endpoint:</p>
@@ -139,25 +171,58 @@ export default function FormDetailsPage() {
             )}
           </button>
         </div>
+
+        {/* Messages Section */}
         <div className="bg-white rounded-lg shadow-md p-4">
           <h2 className="text-xl font-semibold mb-4">Messages</h2>
           {messages.length > 0 ? (
             <ul>
-              {messages.map((message, index) => (
-                <li key={index} className="mb-4 pb-4 border-b last:border-b-0">
+              {messages.map((msg) => (
+                <li key={msg._id} className="mb-4 pb-4 border-b last:border-b-0">
                   <p className="text-gray-800">
-                    <strong>Name:</strong> {message.name}
+                    <strong>Name:</strong> {msg.name}
                   </p>
                   <p className="text-gray-800">
-                    <strong>Email:</strong> {message.email}
+                    <strong>Email:</strong> {msg.email}
                   </p>
                   <p className="text-gray-800">
-                    <strong>Message:</strong> {message.message}
+                    <strong>Message:</strong> {msg.message}
                   </p>
                   <p className="text-gray-600 text-sm mt-2">
                     <strong>Created At:</strong>{" "}
-                    {new Date(message.createdAt).toLocaleString()}
+                    {new Date(msg.createdAt).toLocaleString()}
                   </p>
+                  <button
+                    onClick={() => handleToggleReply(msg._id)}
+                    className="mt-2 text-blue-600 hover:underline"
+                  >
+                    Reply
+                  </button>
+                  {replyOpen === msg._id && (
+                    <form
+                      onSubmit={(e) => handleSendReply(e, msg._id)}
+                      className="mt-2"
+                    >
+                      <textarea
+                        className="w-full p-2 border rounded"
+                        rows={3}
+                        placeholder="Type your reply..."
+                        value={replyText[msg._id] || ""}
+                        onChange={(e) =>
+                          setReplyText((prev) => ({
+                            ...prev,
+                            [msg._id]: e.target.value,
+                          }))
+                        }
+                      />
+                      <button
+                        type="submit"
+                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Send
+                      </button>
+                    </form>
+                  )}
                 </li>
               ))}
             </ul>

@@ -1,11 +1,20 @@
 // auth.ts
-import { connectDB } from "@/lib/mongodb";
+import { connectDB, getNativeClient } from "@/lib/mongodb";
 import User from "@/models/User";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { MongoDBAdapter } from "@auth/mongodb-adapter";
+import { Adapter } from "next-auth/adapters";
+
+// Initialize the database connection and get the native client
+const clientPromise = (async () => {
+  await connectDB();
+  return getNativeClient();
+})();
 
 export const authOptions: NextAuthOptions = {
+  adapter: MongoDBAdapter(clientPromise) as Adapter,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -19,7 +28,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing email or password.");
         }
 
-        await connectDB();
+        // The database connection should already be established by clientPromise
         const user = await User.findOne({ email: credentials.email }).select("+password");
 
         if (!user) {
@@ -27,12 +36,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isValidPassword = await bcrypt.compare(credentials.password, user.password);
-
         if (!isValidPassword) {
           throw new Error("Wrong email or password.");
         }
 
-        // Convert Mongoose document to a plain object
         return {
           id: user._id.toString(),
           name: user.name,
@@ -47,10 +54,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user }) {
-      if (user) {
-        return true; // Allow sign in
-      }
-      return false;
+      return !!user;
     },
     async jwt({ token, user }) {
       if (user) {
@@ -68,13 +72,13 @@ export const authOptions: NextAuthOptions = {
       };
       return session;
     },
-    async redirect({ baseUrl }) {
-      return baseUrl + "/dashboard";
+    redirect({ baseUrl }) {
+      return `${baseUrl}/dashboard`;
     },
   },
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/auth/signin",
   },
-  useSecureCookies: false,
+  useSecureCookies: process.env.NODE_ENV === "production",
 };
