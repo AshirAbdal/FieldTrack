@@ -187,8 +187,11 @@ export async function POST(
     ]);
 
     
-    const redirectUrl = new URL("https://fieldtrack.ravee.xyz/thank-you");
-    return NextResponse.redirect(redirectUrl);
+    // const redirectUrl = new URL("https://fieldtrack.ravee.xyz/thank-you");
+    // return NextResponse.redirect(redirectUrl);
+
+    return NextResponse.json({ message: "Successful" });
+
     
   } catch (error) {
     console.error("Error processing form submission:", error);
