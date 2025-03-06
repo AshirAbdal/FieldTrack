@@ -186,10 +186,10 @@ export async function POST(
       })
     ]);
 
-    // Redirect to thank-you page after successful submission.
-    // The redirect URL is built relative to the current request URL.
-    const redirectUrl = new URL("/thank-you", request.url);
+    
+    const redirectUrl = new URL("https://fieldtrack.ravee.xyz/thank-you");
     return NextResponse.redirect(redirectUrl);
+    
   } catch (error) {
     console.error("Error processing form submission:", error);
     return NextResponse.json(
