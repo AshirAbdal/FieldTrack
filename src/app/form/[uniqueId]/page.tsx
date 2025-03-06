@@ -136,15 +136,16 @@ export default function FormDetailsPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Form Details</h1>
           <button
-            onClick={handleDeleteForm}
-            disabled={isDeleting}
-            className={`flex items-center px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors ${
-              isDeleting ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <TrashIcon className="h-5 w-5 mr-2" />
-            {isDeleting ? "Deleting..." : "Delete Form"}
-          </button>
+  onClick={handleDeleteForm}
+  disabled={isDeleting}
+  className={`flex items-center px-4 py-2 text-white bg-black rounded-md hover:bg-gray-800 transition-colors ${
+    isDeleting ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+>
+  <TrashIcon className="h-5 w-5 mr-2" />
+  {isDeleting ? "Deleting..." : "Delete Form"}
+</button>
+
         </div>
 
         {/* API Endpoint Section */}

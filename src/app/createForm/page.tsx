@@ -44,29 +44,34 @@ export default function CreateFormPage() {
           <div className="mb-4">
             <label className="block mb-2">Name</label>
             <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
+  placeholder="Name"
+  type="text"
+  value={name}
+  onChange={(e) => setName(e.target.value)}
+  className="w-full px-3 py-2 border rounded placeholder-gray-500"
+  required
+/>
+
           </div>
           <div className="mb-4">
             <label className="block mb-2">Forward To</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
+  placeholder="Email"
+  type="email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  className="w-full px-3 py-2 border rounded placeholder-gray-500"
+  required
+/>
+
           </div>
           <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Create Form
-          </button>
+  type="submit"
+  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+>
+  Create Form
+</button>
+
         </form>
       </div>
     </div>

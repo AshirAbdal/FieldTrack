@@ -58,11 +58,11 @@ export default function Header() {
               />
             )}
             {session?.user?.name && (
-              <span className="text-gray-600 text-sm">{session.user.name}</span>
+              <span className="text-gray-600 text-sm">{}</span>
             )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-red-500 hover:text-red-700 text-sm font-medium"
+              className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm font-medium"
               aria-label="Log out"
             >
               Log out
@@ -71,7 +71,7 @@ export default function Header() {
         ) : (
           <Link
             href="/login"
-            className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+            className="text-black-500 hover:text-black-700 text-sm font-medium"
             aria-label="Sign in"
           >
             Sign In
@@ -96,7 +96,11 @@ export default function Header() {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+            d={
+              isMobileMenuOpen
+                ? "M6 18L18 6M6 6l12 12"
+                : "M4 6h16M4 12h16M4 18h16"
+            }
           />
         </svg>
       </button>
@@ -149,8 +153,8 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`hover:text-blue-600 ${
-        isActive ? "text-blue-600 font-bold" : "text-gray-700"
+      className={`hover:text-black-600 ${
+        isActive ? "text-black-600 font-bold" : "text-gray-700"
       }`}
       aria-current={isActive ? "page" : undefined}
     >
