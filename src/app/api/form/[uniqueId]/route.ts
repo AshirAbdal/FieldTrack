@@ -10,13 +10,60 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { uniqueId: string } }
-) {
+// export async function GET(
+//   _request: NextRequest,
+//   { params }: { params: { uniqueId: string } }
+// ) {
+//   try {
+//     // Await params
+//     const { uniqueId } = params;
+
+//     await connectDB();
+
+//     // Validate session
+//     const session = await getServerSession(authOptions);
+//     if (!session || !session.user) {
+//       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const form = await Form.findOne({ 
+//       uniqueId, 
+//       userId: session.user.id 
+//     }).exec(); 
+
+//     if (!form) {
+//       return NextResponse.json({ message: "Form not found" }, { status: 404 });
+//     }
+//     const messages = await Message.find({ 
+//       formId: form._id,
+//       userId: session.user.id 
+//     })
+//     .sort({ createdAt: -1 })
+//     .exec(); 
+
+//     return NextResponse.json({
+//       requestUrl: form.requestUrl,
+//       messages: messages.map(msg => ({
+//         name: msg.name,
+//         email: msg.email,
+//         message: msg.message,
+//         createdAt: msg.createdAt
+//       })),
+//     });
+//   } catch (error) {
+//     console.error("Error fetching form details:", error);
+//     return NextResponse.json(
+//       { message: "Error fetching form details" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ uniqueId: string }> }) {
   try {
-    // Await params
     const { uniqueId } = await params;
+    // Await params
 
     await connectDB();
 
@@ -26,23 +73,20 @@ export async function GET(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Ensure findOne() is properly awaited
     const form = await Form.findOne({ 
       uniqueId, 
       userId: session.user.id 
-    }).exec(); // Add .exec() for better async handling
+    }).exec(); 
 
     if (!form) {
       return NextResponse.json({ message: "Form not found" }, { status: 404 });
     }
-
-    // Fetch messages properly
     const messages = await Message.find({ 
       formId: form._id,
       userId: session.user.id 
     })
     .sort({ createdAt: -1 })
-    .exec(); // Add .exec() for better async handling
+    .exec(); 
 
     return NextResponse.json({
       requestUrl: form.requestUrl,
@@ -66,7 +110,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { uniqueId: string } }
+  { params }: { params: Promise<{ uniqueId: string }> }
 ) {
   try {
     // Await params to get the uniqueId value properly
@@ -137,12 +181,9 @@ export async function POST(
 
 
 
-
-
-
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { uniqueId: string } }
+  { params }: { params: Promise<{ uniqueId: string }> }
 ) {
   try {
     // Await params

@@ -20,7 +20,7 @@ export default function Header() {
       {/* Left: Logo */}
       <div className="flex items-center">
         <Link href="/" aria-label="Go to homepage">
-          <Image src="/logo.svg" alt="Logo" width={40} height={40} />
+          <Image src="/picture/freepik__database.png" alt="" width={40} height={40} />
         </Link>
       </div>
 
@@ -58,7 +58,7 @@ export default function Header() {
               />
             )}
             {session?.user?.name && (
-              <span className="text-gray-600 text-sm">Hi, {session.user.name}!</span>
+              <span className="text-gray-600 text-sm">{session.user.name}</span>
             )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
